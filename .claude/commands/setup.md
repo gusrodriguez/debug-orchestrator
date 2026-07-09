@@ -56,6 +56,59 @@ Then ask:
 
 Validate that each path exists within the frontend repo using Bash.
 
+## Step 2B — Frontend profile (CLAUDE.md)
+
+Check if `<frontend-repo-path>/CLAUDE.md` exists using Bash.
+
+### If CLAUDE.md exists
+
+Read it. Check if it already contains the section header
+`## Debug Orchestrator — Frontend Profile`.
+
+- **Section exists** → tell the user: `Frontend profile found in CLAUDE.md. Using it.`
+  Skip to Step 3.
+
+- **Section does not exist** → tell the user:
+
+  > Your frontend repo has a `CLAUDE.md` file. I can add a **Debug Orchestrator**
+  > section with a route map and service layer summary. This helps the Scout agent
+  > jump directly to relevant files instead of scanning the whole codebase — saving
+  > tokens and improving accuracy.
+  >
+  > The section will be **appended** to your existing file, clearly delimited. Your
+  > current content will not be modified.
+  >
+  > 1. **Yes, generate and append** — I'll scan the frontend and add the section
+  > 2. **Skip** — I'll skip this for now (you can add it later)
+
+  - If **1 (Generate):** Spawn the **Profiler** agent. Read `agents/profiler.md` from
+    this repo, extract the body after frontmatter, and spawn a Task (model: sonnet)
+    with:
+    - The Profiler instructions
+    - Frontend repo path
+    - The apps mapping from Step 2
+
+    Wait for the Profiler to return. **Append** its output to the existing CLAUDE.md
+    with a blank line separator. Do NOT modify any existing content in the file.
+
+  - If **2 (Skip):** Continue.
+
+### If CLAUDE.md does not exist
+
+Tell the user:
+
+> No `CLAUDE.md` found in the frontend repo. I can generate one with a route map
+> and service layer summary. This helps the Scout agent navigate your codebase
+> efficiently when debugging.
+>
+> 1. **Yes, generate it** — I'll scan the frontend and create CLAUDE.md
+> 2. **Skip** — I'll skip this (the Scout will explore the codebase manually)
+
+- If **1 (Generate):** Spawn the **Profiler** agent (same as above). Write its output
+  as a new `CLAUDE.md` at `<frontend-repo-path>/CLAUDE.md`.
+
+- If **2 (Skip):** Continue.
+
 ## Step 3 — Configure backends
 
 ### Step 3A — Backend repo path

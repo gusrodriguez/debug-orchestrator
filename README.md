@@ -47,6 +47,7 @@ Open Claude Code **in this repo** and run:
 
 The setup command will:
 - Ask for your frontend repo path and app directories
+- Offer to generate a frontend profile in `CLAUDE.md` (route map, service layer summary) — appends to your existing file if one exists
 - Ask for your backend repo path and service package
 - Scaffold the MCP server into your backend if needed
 - Help you create a builder script (or copy the Azure Functions template)
@@ -75,6 +76,7 @@ The orchestrator delegates work to specialized agents, each optimized for its ta
 | **Fixer** | Sonnet | Retries failed steps with drift tolerance |
 | **Specialist** | Opus | Last-resort executor with full reasoning |
 | **Guide** | Sonnet | Helps create builder scripts for new backends |
+| **Profiler** | Sonnet | Generates frontend profile for CLAUDE.md |
 
 ## Project structure
 
@@ -90,7 +92,8 @@ debug-orchestrator/
 │   ├── fixer.md              # Retries with drift tolerance
 │   ├── specialist.md         # Last-resort executor (Opus)
 │   ├── scout.md              # Analyzes frontend code
-│   └── guide.md              # Helps create builders
+│   ├── guide.md              # Helps create builders
+│   └── profiler.md           # Generates frontend profile
 ├── scripts/
 │   ├── mcp-server.ts         # Generic MCP server
 │   └── builders/

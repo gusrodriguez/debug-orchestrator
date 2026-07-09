@@ -275,3 +275,4 @@ All file paths passed to agents must be **absolute**.
 | Fixer | `agents/fixer.md` | Sonnet | Retry executor (drift tolerance) |
 | Specialist | `agents/specialist.md` | Opus | Last-resort executor |
 | Guide | `agents/guide.md` | Sonnet | Builder creation assistant |
+| Profiler | `agents/profiler.md` | Sonnet | Generates frontend profile for CLAUDE.md |
