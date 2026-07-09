@@ -1,0 +1,7 @@
+{
+  "name": "debug-orchestrator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-repo debugging toolkit for Claude Code. Orchestrates bug diagnosis and fixes across frontend and backend repositories using MCP tools and specialized sub-agents.",
+  "type": "module"
+}
