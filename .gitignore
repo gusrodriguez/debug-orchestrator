@@ -1,2 +1,6 @@
 node_modules
 .DS_Store
+
+# Generated per-developer by /setup
+debug-config.json
+.mcp.json

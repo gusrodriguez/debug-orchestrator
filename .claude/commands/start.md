@@ -1,5 +1,5 @@
 ---
-description: "Cross-repo bug debugger. Gathers context from frontend and backend via MCP, diagnoses, plans, and fixes — with user checkpoints at every decision point. Run /debug-orchestrator/setup first."
+description: "Cross-repo bug debugger. Gathers context from frontend and backend via MCP, diagnoses, plans, and fixes — with user checkpoints at every decision point. Run /setup first."
 ---
 
 # Debug Orchestrator
@@ -11,10 +11,9 @@ description: "Cross-repo bug debugger. Gathers context from frontend and backend
 2. **You NEVER read, grep, glob, or edit source files.** You are an orchestrator. Sub-agents
    and MCP tools do the work. You schedule and present results.
 3. **You NEVER skip phases.** Execute them in order: 0 → 1A → 1B → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9.
-4. **The backend is in a SEPARATE repo.** It does not exist here. The only way to inspect
-   it is via MCP tools (`search_backend_routes`, `get_backend_endpoint`,
-   `search_backend_models`). To fix backend files, use `get_backend_repo_path` to get
-   the absolute path, then spawn a sub-agent that edits files using absolute paths.
+4. **Both frontend and backend are in SEPARATE repos.** They do not exist here. The only
+   way to inspect the backend is via MCP tools. The only way to inspect or edit the
+   frontend is via sub-agents using absolute paths from `debug-config.json`.
 5. **You NEVER edit or fix files directly.** Even if the fix is obvious. Executors do that
    in Phase 7, after the user approves the plan.
 
@@ -24,12 +23,11 @@ description: "Cross-repo bug debugger. Gathers context from frontend and backend
 
 Before spawning any sub-agent:
 
-1. Read `debug-config.json` at the repo root to get `debugOrchestratorPath` and the
-   `apps` mapping. If `debug-config.json` does not exist, tell the user to run
-   `/debug-orchestrator/setup` first and **STOP**.
-2. Agents live at `<debugOrchestratorPath>/agents/`. When a phase says "spawn
-   **AgentName**":
-   a. Read `<debugOrchestratorPath>/agents/<agent-name>.md`
+1. Read `debug-config.json` at the repo root to get the `frontend` and `backends`
+   config. If `debug-config.json` does not exist, tell the user to run `/setup` first
+   and **STOP**.
+2. Agents live at `agents/` in this repo. When a phase says "spawn **AgentName**":
+   a. Read `agents/<agent-name>.md`
    b. The frontmatter `model:` field determines which model to use:
       - `haiku` → cheap/fast model
       - `sonnet` → balanced model
@@ -42,7 +40,8 @@ Before spawning any sub-agent:
 
 ## App mapping
 
-Read the `apps` field from `debug-config.json`. It maps aliases to paths:
+Read the `frontend.apps` field from `debug-config.json`. It maps aliases to paths
+within the frontend repo:
 
 ```json
 {
@@ -51,13 +50,17 @@ Read the `apps` field from `debug-config.json`. It maps aliases to paths:
 }
 ```
 
+All frontend paths are **relative to the frontend repo root** (`frontend.repoPath`).
+When passing paths to sub-agents, prepend `frontend.repoPath` to get absolute paths.
+
 If the user's bug description does not clearly indicate which app, ask before proceeding.
 
 ## Phase 0 — Parse
 
 1. Read the user's bug description.
-2. Resolve the app from the `apps` mapping in `debug-config.json`.
-3. Extract keywords for the backend search (route names, endpoint paths, resource names).
+2. Read `debug-config.json` to get `frontend.repoPath`, `frontend.apps`, and backend config.
+3. Resolve the app from the `frontend.apps` mapping.
+4. Extract keywords for the backend search (route names, endpoint paths, resource names).
 
 ## Phase 1A — Backend mapping (MANDATORY FIRST STEP)
 
@@ -87,7 +90,9 @@ useful, say so explicitly in the brief — do not skip it.
 
 Only after Phase 1A completes, spawn **Scout** (sub-agent) with:
 - Bug description (verbatim from user)
-- App path (from Phase 0)
+- **Absolute** app path: `<frontend.repoPath>/<app-path>` (e.g.,
+  `/Users/.../adg-octopus/apps/ground-audits-admin`)
+- Instruction: check for `CLAUDE.md` at `<frontend.repoPath>/CLAUDE.md` first
 
 Use model `sonnet`. Wait for Scout to return its brief.
 
@@ -149,10 +154,9 @@ Spawn **Architect** (sub-agent, model: opus) with:
 - Scout brief (verbatim)
 - Backend brief (verbatim)
 - Cartographer diagnosis brief (verbatim)
-- Repo conventions from `CLAUDE.md` (if it exists at the repo root)
+- Repo conventions from `<frontend.repoPath>/CLAUDE.md` (if it exists)
 - **Extra instruction:** each step must include a `Side: frontend | backend` field. Group
-  frontend steps before backend steps where possible, since frontend can be verified
-  locally.
+  frontend steps before backend steps where possible. All file paths must be **absolute**.
 
 Architect produces a full plan artifact in the standardized format (Objective, Context,
 Design overview, Change map, Task checklist, Execution plan, Implementation steps, etc.).
@@ -187,7 +191,8 @@ Execute waves in order. Within each wave:
 
 Spawn one **Worker** per frontend step (parallel, max 5 concurrent). Each receives:
 - The step block (verbatim from the plan's section 7)
-- A conventions excerpt from `CLAUDE.md` (if available)
+- A conventions excerpt from `<frontend.repoPath>/CLAUDE.md` (if available)
+- Instruction: all file paths are **absolute** (prepend `frontend.repoPath` if relative)
 
 Use model `haiku`.
 
@@ -226,7 +231,8 @@ On **failure** → **HARD STOP.** Present the failure reason and offer:
 
 After all steps complete:
 
-1. For frontend changes: run `tsc --noEmit` on the affected app.
+1. For frontend changes: run `tsc --noEmit` targeting the frontend repo's tsconfig
+   (e.g., `npx tsc --noEmit --project <frontend.repoPath>/tsconfig.json`).
 2. If the repo has lint configured: run lint on changed files.
 3. On **pass** → proceed to wrap-up.
 4. On **failure** → **HARD STOP.** Present the errors. Offer:
@@ -246,7 +252,7 @@ After all steps complete:
 
 | Agent | What it receives |
 |-------|-----------------|
-| Scout | Bug description + app path |
+| Scout | Bug description + **absolute** app path |
 | _(Backend mapping)_ | _(inline — orchestrator calls MCP tools directly)_ |
 | Cartographer (diagnosis) | Bug description + both briefs + user corrections |
 | Cartographer (verify fix) | Failure output + plan change map + execution log |
@@ -256,6 +262,7 @@ After all steps complete:
 | Guide | Backend repo path + package path + reference builder path |
 
 No agent receives the full conversation. Each gets only its specific input.
+All file paths passed to agents must be **absolute**.
 
 ## Sub-agents reference
 

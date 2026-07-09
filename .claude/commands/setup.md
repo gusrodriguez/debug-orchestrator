@@ -1,5 +1,5 @@
 ---
-description: "Sets up cross-repo debugging. Detects existing config, scaffolds MCP server into backend, helps create a builder, and wires up .mcp.json. Run this before /debug-orchestrator/start."
+description: "Sets up cross-repo debugging. Configures frontend and backend repos, scaffolds MCP server, helps create a builder, and wires up .mcp.json. Run this before /start."
 ---
 
 # Debug Orchestrator Setup
@@ -20,8 +20,8 @@ Based on what you find:
 - **`debug-config.json` does not exist** → go to **Step 2**.
 - **`debug-config.json` exists** → read it, then also read `.mcp.json`. Ask the user:
 
-  > Configuration found with backend `<name>`. Is the MCP server connected in this
-  > session?
+  > Configuration found with backend `<name>` and frontend at `<frontend.repoPath>`.
+  > Is the MCP server connected in this session?
   >
   > 1. **Yes** — it's connected, let's debug
   > 2. **No** — I need to restart first
@@ -31,27 +31,22 @@ Based on what you find:
   - If **No** → go to **Step 6C**.
   - If **Reconfigure** → go to **Step 2**.
 
-## Step 2 — Locate debug-orchestrator repo
-
-First, try to auto-detect the debug-orchestrator repo. Check if this command file itself
-is a symlink by reading it — if it is, the debug-orchestrator repo is the symlink target's
-grandparent directory.
-
-If auto-detection fails, ask the user:
-
-> **What is the path to the `debug-orchestrator` repo?**
->
-> Open a terminal in the repo root and run **`pwd`**, then paste the output here.
-
-Validate by checking that `<path>/agents/cartographer.md` exists using Bash.
-
-## Step 3 — Configure frontend apps
+## Step 2 — Configure frontend
 
 Ask the user:
 
+> **What is the path to the frontend repo?**
+>
+> Open a terminal in the frontend repo's root folder and run **`pwd`**, then paste
+> the output here.
+
+Validate the path exists using Bash. Remove any trailing slash.
+
+Then ask:
+
 > **Which frontend apps are in this repo?**
 >
-> For each app, provide an alias and its path within this repo.
+> For each app, provide an alias and its path within the repo.
 >
 > **Example:**
 > ```
@@ -59,11 +54,11 @@ Ask the user:
 > turnaround = apps/turnaround-inspection
 > ```
 
-Validate that each path exists in the current repo using Bash.
+Validate that each path exists within the frontend repo using Bash.
 
-## Step 4 — Configure backends
+## Step 3 — Configure backends
 
-### Step 4A — Backend repo path
+### Step 3A — Backend repo path
 
 Ask the user:
 
@@ -74,7 +69,7 @@ Ask the user:
 
 Validate the path exists using Bash. Remove any trailing slash.
 
-### Step 4B — Package path
+### Step 3B — Package path
 
 Ask the user:
 
@@ -93,20 +88,20 @@ Derive the service name from the package path (last segment):
 Derive the repo name from the repo path (last segment):
 - `/Users/gustav/Documents/p/sas/adg-reports` → `adg-reports`
 
-### Step 4C — Check for MCP server
+### Step 3C — Check for MCP server
 
 Check if `<repo-path>/<package-path>/scripts/mcp-server.ts` exists using Bash.
 
 - **Exists** → tell the user: `MCP server found at <path>. Using it.`
 - **Does not exist** → tell the user:
 
-  > No MCP server found. I'll create one from the debug-orchestrator template.
+  > No MCP server found. I'll create one from the template.
 
-  Read `<debugOrchestratorPath>/scripts/mcp-server.ts` and copy it to
-  `<repo-path>/<package-path>/scripts/mcp-server.ts`. Create the `scripts/` directory
-  if it does not exist.
+  Read the MCP server template from this repo at `scripts/mcp-server.ts` and copy it
+  to `<repo-path>/<package-path>/scripts/mcp-server.ts`. Create the `scripts/`
+  directory if it does not exist.
 
-### Step 4D — Check for builder
+### Step 3D — Check for builder
 
 Check if any builder script exists at `<repo-path>/<package-path>/scripts/builders/`
 or at `<repo-path>/<package-path>/scripts/*build-index*` or
@@ -125,17 +120,18 @@ or at `<repo-path>/<package-path>/scripts/*build-index*` or
   > 2. **Create with Guide** — I'll inspect your code and help you write a builder
   > 3. **Custom placeholder** — create a minimal placeholder you'll fill in yourself
 
-  - If **1 (Azure Functions):** Read `<debugOrchestratorPath>/scripts/builders/azure-functions.ts`
-    and copy it to `<repo-path>/<package-path>/scripts/builders/azure-functions.ts`.
+  - If **1 (Azure Functions):** Read `scripts/builders/azure-functions.ts` from this
+    repo and copy it to `<repo-path>/<package-path>/scripts/builders/azure-functions.ts`.
     Create the `scripts/builders/` directory if needed. Builder name = `azure-functions`.
 
   - If **2 (Create with Guide):** Spawn a sub-agent using the Guide agent instructions.
-    Read `<debugOrchestratorPath>/agents/guide.md`, extract the body after frontmatter,
-    and spawn a Task (model: sonnet) with:
+    Read `agents/guide.md` from this repo, extract the body after frontmatter, and
+    spawn a Task (model: sonnet) with:
     - The Guide instructions
     - Backend repo path: `<repo-path>`
     - Package path: `<package-path>`
-    - Reference builder path: `<debugOrchestratorPath>/scripts/builders/azure-functions.ts`
+    - Reference builder path: the absolute path to `scripts/builders/azure-functions.ts`
+      in this repo
 
     Wait for the Guide to finish. It will create the builder and report its location.
     Record the builder path and framework name.
@@ -189,7 +185,7 @@ or at `<repo-path>/<package-path>/scripts/*build-index*` or
     > A placeholder builder has been created. It produces an empty code index. Edit
     > `scripts/builders/custom.ts` to scan your service's source code.
 
-### Step 4E — Check dependencies
+### Step 3E — Check dependencies
 
 Check if the required packages exist in the backend repo:
 
@@ -207,7 +203,7 @@ If any are missing, tell the user:
 > yarn add -D @modelcontextprotocol/sdk zod tsx
 > ```
 
-### Step 4F — Add another backend?
+### Step 3F — Add another backend?
 
 Ask:
 
@@ -216,18 +212,20 @@ Ask:
 > 1. **Yes** — add another backend
 > 2. **No** — done, continue with setup
 
-If yes, repeat from Step 4A. If no, continue.
+If yes, repeat from Step 3A. If no, continue.
 
-## Step 5 — Write debug-config.json
+## Step 4 — Write debug-config.json
 
-Write `debug-config.json` to the host repo root:
+Write `debug-config.json` to **this repo's root** (the debug-orchestrator repo):
 
 ```json
 {
-  "debugOrchestratorPath": "<absolute-path-to-debug-orchestrator>",
-  "apps": {
-    "<alias>": "<app-path>",
-    ...
+  "frontend": {
+    "repoPath": "<absolute-frontend-repo-path>",
+    "apps": {
+      "<alias>": "<app-path>",
+      ...
+    }
   },
   "backends": [
     {
@@ -248,9 +246,9 @@ Write `debug-config.json` to the host repo root:
 Adjust `builder.script` if the builder was found at a non-standard location (e.g.,
 `scripts/azure-functions-build-index.ts` instead of `scripts/builders/azure-functions.ts`).
 
-## Step 6 — Write .mcp.json
+## Step 5 — Write .mcp.json
 
-Write `.mcp.json` at the host repo root. Generate one entry per backend:
+Write `.mcp.json` at **this repo's root**. Generate one entry per backend:
 
 ```json
 {
@@ -272,13 +270,16 @@ Write `.mcp.json` at the host repo root. Generate one entry per backend:
 }
 ```
 
-Then proceed to **Step 6C**.
+Then proceed to **Step 5C**.
 
-## Step 6C — Restart required
+## Step 5C — Restart required
 
 Tell the user:
 
-> **Setup complete.** The following backends have been configured:
+> **Setup complete.** The following has been configured:
+>
+> **Frontend:** `<frontend.repoPath>`
+> **Apps:** <list of aliases and paths>
 >
 > | Service | Repo | Builder |
 > |---------|------|---------|
@@ -290,7 +291,7 @@ Tell the user:
 > Close this session and start a new one, then run:
 >
 > ```
-> /debug-orchestrator/start
+> /start
 > ```
 >
 > On first launch, Claude Code will ask you to approve the MCP server — accept it.
@@ -301,26 +302,26 @@ Tell the user:
 
 **Now** call the `backend_overview` MCP tool to get service details.
 
-Read `debug-config.json` to get the backend info and app mapping.
+Read `debug-config.json` to get the frontend and backend info.
 
 Present:
 
+> **Frontend:** `<frontend.repoPath>`
+> **Apps:** <list of aliases and paths>
+>
 > **Active backend:** `<name>` (repo: `<repo>`)
 > **Builder:** `<builder.name>`
 > **Index:** <function count> functions, <model count> Prisma models
 >
-> **Apps:** <list of app aliases and paths>
->
 > **What would you like to do?**
 >
 > 1. **Debug a bug** — describe the issue and I'll start the orchestrator
-> 2. **Reconfigure** — change the backend or app settings
+> 2. **Reconfigure** — change the frontend, backend, or app settings
 
 **Wait for the user's choice.**
 
-- If the user picks **1** or describes a bug → read `debug-config.json` to get
-  `debugOrchestratorPath`, then read `<debugOrchestratorPath>/commands/start.md` and
-  follow its workflow from **Phase 0**.
+- If the user picks **1** or describes a bug → read the start command from
+  `.claude/commands/start.md` and follow its workflow from **Phase 0**.
 - If the user picks **2** → go to **Step 2**.
 
 **STOP here and wait for the user's response.**
