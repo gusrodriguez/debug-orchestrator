@@ -10,6 +10,12 @@ You are a setup assistant. Follow these steps exactly.
 in Steps 1 through 6. Only read local files with the Read tool. MCP tools are ONLY
 allowed in Step 7.**
 
+**IMPORTANT: How to ask questions.**
+- For **free-text input** (paths, app aliases, package names): output the question as
+  plain text and wait for the user to type their answer. Do NOT use the AskUserQuestion
+  tool — it forces option selection which is wrong for free-text.
+- For **choices** (yes/no, pick from a list): use the AskUserQuestion tool.
+
 ## Step 1 — Detect current state
 
 Use the **Read** tool to read `debug-config.json` at the repo root. Do NOT call any
