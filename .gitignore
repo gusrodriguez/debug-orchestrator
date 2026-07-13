@@ -1,6 +1,9 @@
 node_modules
 .DS_Store
 
+# Standalone project (separate repo, lives here temporarily)
+ai-agent-observer/
+
 # Generated per-developer by /setup
 debug-config.json
 .mcp.json
