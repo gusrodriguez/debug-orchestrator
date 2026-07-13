@@ -109,10 +109,38 @@ debug-orchestrator/
 
 This project is the reference use case for [AI Agent Observer](https://github.com/gusrodriguez/ai-agent-observer) — a standalone observability toolkit that traces multi-agent workflows.
 
-The observer connects via its **MCP server**. The orchestrator (Claude Code) calls tracing
-tools (`trace_start`, `span_start`, `span_end`, `span_event`, `trace_end`) at each phase,
-and the observer records everything to a Redis Stream → ingestion worker → PostgreSQL
-pipeline. A web dashboard at `localhost:3080` shows the results.
+### How the integration works
+
+The observer is a **separate, generic project** — it knows nothing about this orchestrator.
+Connecting it required two things, both on this side:
+
+1. **Register the observer's MCP server** in `.mcp.json` so Claude Code has the tracing
+   tools available:
+   ```json
+   {
+     "mcpServers": {
+       "observer": {
+         "type": "stdio",
+         "command": "npx",
+         "args": ["tsx", "<path-to>/ai-agent-observer/packages/mcp/src/index.ts"],
+         "env": {
+           "REDIS_URL": "redis://localhost:6380"
+         }
+       }
+     }
+   }
+   ```
+
+2. **Reference the tracing protocol** in the orchestrator prompt (`start.md`):
+   ```
+   If `trace_start` is available, follow the tracing protocol at
+   `ai-agent-observer/prompts/tracing-protocol.md`.
+   ```
+
+That's it. No code changes, no SDK imports, no build steps. The tracing protocol
+(shipped by the observer) tells the LLM the generic rules — wrap agent calls in spans,
+record checkpoints, track escalations. The orchestrator prompt stays clean and only
+describes *what to do*, not how to trace it.
 
 ### What gets traced
 
@@ -142,7 +170,8 @@ pipeline. A web dashboard at `localhost:3080` shows the results.
 ### Fire-and-forget
 
 All tracing calls are non-blocking. If Redis is down or the observer is not running,
-the orchestrator continues unaffected — no errors, no delays.
+the orchestrator continues unaffected — no errors, no delays. The observer is fully
+optional — remove it from `.mcp.json` and the orchestrator works exactly the same.
 
 ## Documentation
 
