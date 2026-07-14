@@ -329,7 +329,51 @@ Write `.mcp.json` at **this repo's root**. Generate one entry per backend:
 }
 ```
 
-Then proceed to **Step 5C**.
+Then proceed to **Step 5B — MCP tool permissions**.
+
+## Step 5B — MCP tool permissions
+
+Ask the user:
+
+> During debugging, the orchestrator calls MCP tools frequently (searching endpoints,
+> fetching models, etc.). By default, Claude Code asks for approval on every call.
+>
+> 1. **Auto-approve all MCP tools** — trust all tools from all configured servers (Recommended)
+> 2. **No** — I'll approve each call manually
+
+If **1 (Auto-approve)**:
+
+Write `.claude/settings.local.json` at **this repo's root** with wildcard permissions
+for each MCP server in `.mcp.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__<server-name>__*"
+    ]
+  }
+}
+```
+
+Add one `mcp__<name>__*` entry per server key in `.mcp.json`. For example, if
+`.mcp.json` has servers named `my-api` and `observer`, write:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__my-api__*",
+      "mcp__observer__*"
+    ]
+  }
+}
+```
+
+If the file already exists, read it first and merge into the existing `permissions.allow`
+array without removing existing entries.
+
+If **2 (No)**: skip.
 
 ## Step 5C — Restart required
 
