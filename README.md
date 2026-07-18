@@ -30,16 +30,9 @@ You write (or generate) a builder for your backend framework. Everything else is
 
 ## Quick start
 
-### 1. Clone this repo
+### 1. Run setup
 
-```bash
-git clone <repo-url>
-cd debug-orchestrator
-```
-
-### 2. Run setup
-
-Open Claude Code **in this repo** and run:
+Open Claude Code **in this repo** and run the skill:
 
 ```
 /setup
@@ -53,7 +46,7 @@ The setup command will:
 - Help you create a builder script (or copy the Azure Functions template)
 - Generate `debug-config.json` and `.mcp.json`
 
-### 3. Restart and debug
+### 2. Restart and debug
 
 After setup, restart your Claude Code session (still in this repo). Then:
 
