@@ -6,7 +6,7 @@ Cross-repo debugging toolkit for [Claude Code](https://docs.anthropic.com/en/doc
 
 You describe a bug. The orchestrator maps the backend (via a pre-built code index
 served through MCP), analyzes the frontend (via a sub-agent), diagnoses the root
-cause, creates a fix plan, and executes it — across both repos. You confirm at
+cause, creates a fix plan, and executes it across both repos. You confirm at
 three hard stops: after analysis, after diagnosis, and before execution.
 
 ### Why this exists
@@ -14,7 +14,7 @@ three hard stops: after analysis, after diagnosis, and before execution.
 Cross-repo bugs are hard to debug with Claude Code because frontend and backend
 live in separate repositories. Claude Code sees one repo at a time. This orchestrator
 sits in a third repo, queries the backend through MCP tools, and sends sub-agents
-into the frontend — coordinating both sides without opening either repo directly.
+into the frontend, coordinating both sides without opening either repo directly.
 
 ### Backend code index
 
@@ -23,7 +23,7 @@ once and indexes every endpoint: route, HTTP method, handler file, schema fields
 Prisma model usage. An MCP server serves that index as searchable tools. When the
 orchestrator needs to find what handles `GET /stations?region=...`, it calls
 `search_backend_routes("stations")` and gets the handler, its source file, and
-database operations in one response — no file scanning.
+database operations in one response. No file scanning. No token costs.
 
 | Layer | Generic? | Purpose |
 |-------|----------|---------|
@@ -33,14 +33,30 @@ database operations in one response — no file scanning.
 
 You write (or generate) a builder for your backend framework. Everything else is generic.
 
-### Cost-aware fix planning
+### Token cost breakdown
 
-By the time the orchestrator reaches the fix stage, it has already identified the
-suspect files and the root cause. Instead of sending the full conversation to Opus
-(the most expensive model), it spawns the Architect as a sub-agent with a fresh
-context window containing only the bug description, the diagnosis, and the relevant
-source code. Opus plans the fix from a narrow, focused input — not the accumulated
-history of every phase that came before it.
+The only phase that scans source code is frontend analysis — Scout (Sonnet) reads
+the relevant components. This cost is reduced further if a `CLAUDE.md` profile
+exists in the frontend repo, since Scout can jump directly to the right files
+instead of exploring the codebase.
+
+Backend mapping has **zero model cost**. It queries the code index through MCP tools,
+no LLM involved. Diagnosis and planning (Cartographer, Architect) work from
+compact briefs, not source code. Execution (Workers) receives one step block per
+sub-agent.
+
+The most expensive model call is the Architect (Opus), which plans the fix. It
+spawns as a sub-agent with a fresh context window containing only the bug
+description, the diagnosis, and the identified source files, not the full
+conversation history. Opus sees a narrow, focused input.
+
+```
+Backend mapping      → MCP tool calls, no model cost
+Frontend analysis    → Sonnet, reads source code (one-time scan)
+Diagnosis            → Sonnet, works from briefs (~2k tokens input)
+Fix planning         → Opus, works from briefs + diagnosis (~3k tokens input)
+Execution per step   → Haiku, one step block (~500 tokens input)
+```
 
 ### Escalation ladder
 
