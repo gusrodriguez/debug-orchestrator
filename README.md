@@ -4,21 +4,26 @@ Cross-repo debugging toolkit for [Claude Code](https://docs.anthropic.com/en/doc
 
 ## How it works
 
-```
-You describe a bug
-    ↓
-Orchestrator maps the backend (MCP) and analyzes the frontend (Scout agent)
-    ↓
-Cartographer diagnoses the root cause → you confirm
-    ↓
-Architect creates a fix plan with exact edits → you approve
-    ↓
-Worker/Fixer/Specialist execute the plan across both repos
-    ↓
-Verification (tsc, lint) → done
-```
+You describe a bug. The orchestrator maps the backend (via a pre-built code index
+served through MCP), analyzes the frontend (via a sub-agent), diagnoses the root
+cause, creates a fix plan, and executes it — across both repos. You confirm at
+three hard stops: after analysis, after diagnosis, and before execution.
 
-The system has three layers:
+### Why this exists
+
+Cross-repo bugs are hard to debug with Claude Code because frontend and backend
+live in separate repositories. Claude Code sees one repo at a time. This orchestrator
+sits in a third repo, queries the backend through MCP tools, and sends sub-agents
+into the frontend — coordinating both sides without opening either repo directly.
+
+### Backend code index
+
+The orchestrator never reads backend source files. Instead, a builder script runs
+once and indexes every endpoint: route, HTTP method, handler file, schema fields,
+Prisma model usage. An MCP server serves that index as searchable tools. When the
+orchestrator needs to find what handles `GET /stations?region=...`, it calls
+`search_backend_routes("stations")` and gets the handler, its source file, and
+database operations in one response — no file scanning.
 
 | Layer | Generic? | Purpose |
 |-------|----------|---------|
@@ -27,6 +32,24 @@ The system has three layers:
 | **Orchestrator** | Yes | Calls MCP tools, spawns sub-agents, applies fixes |
 
 You write (or generate) a builder for your backend framework. Everything else is generic.
+
+### Cost-aware fix planning
+
+By the time the orchestrator reaches the fix stage, it has already identified the
+suspect files and the root cause. Instead of sending the full conversation to Opus
+(the most expensive model), it spawns the Architect as a sub-agent with a fresh
+context window containing only the bug description, the diagnosis, and the relevant
+source code. Opus plans the fix from a narrow, focused input — not the accumulated
+history of every phase that came before it.
+
+### Escalation ladder
+
+Execution starts with Worker (Haiku), the cheapest model. Most steps are mechanical
+edits that succeed at this tier. When a Worker fails, you choose: retry with Fixer
+(Sonnet, handles shifted line numbers), retry with Specialist (Opus, applies
+judgment), have the Architect rewrite the step, or skip it. The orchestrator never
+auto-escalates — you decide whether a failure is worth retrying with a more
+expensive model.
 
 ## Quick start
 
