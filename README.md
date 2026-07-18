@@ -18,12 +18,9 @@ into the frontend, coordinating both sides without opening either repo directly.
 
 ### Backend code index
 
-The orchestrator never reads backend source files. Instead, a builder script runs
-once and indexes every endpoint: route, HTTP method, handler file, schema fields,
-Prisma model usage. An MCP server serves that index as searchable tools. When the
-orchestrator needs to find what handles `GET /stations?region=...`, it calls
-`search_backend_routes("stations")` and gets the handler, its source file, and
-database operations in one response. No file scanning. No token costs.
+The orchestrator never reads backend source files directly. Instead, a builder script runs once and creates an index of every endpoint, including its route, HTTP method, handler file, schema fields, and Prisma model usage.
+
+An MCP server exposes this index through searchable tools. For example, when the orchestrator needs to determine what handles `GET /stations?region=...`, it calls `search_backend_routes("stations")` and receives the relevant handler, source file, and database operations in a single response. No file scanning. No token costs.
 
 | Layer | Generic? | Purpose |
 |-------|----------|---------|
