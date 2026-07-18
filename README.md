@@ -107,73 +107,13 @@ debug-orchestrator/
 
 ## Observability
 
-This project is the reference use case for [AI Agent Observer](https://github.com/gusrodriguez/ai-agent-observer) — a standalone observability toolkit that traces multi-agent workflows.
+This project is the reference use case for [AI Agent Observer](https://github.com/gusrodriguez/ai-agent-observer), a standalone observability toolkit I also built for tracing multi-agent workflows.
 
-### How the integration works
+The integration is kept external to the orchestrator:
 
-The observer is a **separate, generic project** — it knows nothing about this orchestrator.
-Connecting it required two things, both on this side:
+* `.mcp.json` registers the observer's MCP server.
+* `start.md` references its reusable tracing protocol.
 
-1. **Register the observer's MCP server** in `.mcp.json` so Claude Code has the tracing
-   tools available:
-   ```json
-   {
-     "mcpServers": {
-       "observer": {
-         "type": "stdio",
-         "command": "npx",
-         "args": ["tsx", "<path-to>/ai-agent-observer/packages/mcp/src/index.ts"],
-         "env": {
-           "REDIS_URL": "redis://localhost:6380"
-         }
-       }
-     }
-   }
-   ```
+This allows the observer to capture agent calls, escalations, human checkpoints, token usage, and cost without SDK imports or application code changes. The integration is optional; the orchestrator continues normally when the observer is unavailable.
 
-2. **Reference the tracing protocol** in the orchestrator prompt (`start.md`):
-   ```
-   If `trace_start` is available, follow the tracing protocol at
-   `ai-agent-observer/prompts/tracing-protocol.md`.
-   ```
-
-That's it. No code changes, no SDK imports, no build steps. The tracing protocol
-(shipped by the observer) tells the LLM the generic rules — wrap agent calls in spans,
-record checkpoints, track escalations. The orchestrator prompt stays clean and only
-describes *what to do*, not how to trace it.
-
-### What gets traced
-
-- **Span waterfall** — every phase and agent invocation as a horizontal bar, nested by parent-child depth on a time axis
-- **Escalation tracking** — when Worker (haiku) fails and Fixer (sonnet) or Specialist (opus) retries, with `fromTier`/`toTier` metadata
-- **Human checkpoint events** — Phase 2 (understanding), Phase 4 (diagnosis), and Phase 6 (plan approval) decisions
-- **Cost breakdown** — spend by model tier and by agent, aggregated across runs
-
-### Setup
-
-1. Start the observer's infrastructure (from the `ai-agent-observer/` subdir):
-   ```bash
-   docker compose up -d
-   npm run db:migrate
-   ```
-
-2. The observer MCP server is already configured in `.mcp.json`. Restart Claude Code
-   to pick up the tools. If `trace_start` is available, tracing is active. If not,
-   the orchestrator skips all tracing calls — they are optional.
-
-3. Open the dashboard:
-   ```bash
-   npm run dev   # from ai-agent-observer/
-   ```
-   Then visit [http://localhost:3080](http://localhost:3080) to see traces.
-
-### Fire-and-forget
-
-All tracing calls are non-blocking. If Redis is down or the observer is not running,
-the orchestrator continues unaffected — no errors, no delays. The observer is fully
-optional — remove it from `.mcp.json` and the orchestrator works exactly the same.
-
-## Documentation
-
-- [Architecture](docs/architecture.md) — three-layer design, data flow, agent roles
-- [Writing a builder](docs/writing-a-builder.md) — how to create a builder for your backend framework
+See the [AI Agent Observer repository](https://github.com/gusrodriguez/ai-agent-observer) for setup instructions, architecture, tracing tools, and dashboard documentation.
