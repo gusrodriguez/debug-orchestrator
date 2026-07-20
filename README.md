@@ -123,7 +123,7 @@ debug-orchestrator/
 │   ├── guide.md              # Helps create builders
 │   └── profiler.md           # Generates frontend profile
 ├── scripts/
-│   ├── mcp-server.ts         # Generic MCP server
+│   ├── mcp-server-template.ts # MCP server template (copied to backends)
 │   └── builders/
 │       └── azure-functions.ts # Reference builder
 ├── docs/

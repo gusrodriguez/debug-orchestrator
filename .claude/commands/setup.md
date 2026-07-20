@@ -156,7 +156,7 @@ Check if `<repo-path>/<package-path>/scripts/mcp-server.ts` exists using Bash.
 
   > No MCP server found. I'll create one from the template.
 
-  Read the MCP server template from this repo at `scripts/mcp-server.ts` and copy it
+  Read the MCP server template from this repo at `scripts/mcp-server-template.ts` and copy it
   to `<repo-path>/<package-path>/scripts/mcp-server.ts`. Create the `scripts/`
   directory if it does not exist.
 

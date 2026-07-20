@@ -1,3 +1,7 @@
+// This file is a template. It is copied into backend repos during /setup and
+// runs as-is via tsx. If you maintain multiple backends, consider publishing
+// this as a standalone npm package instead of copying the template each time.
+
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
