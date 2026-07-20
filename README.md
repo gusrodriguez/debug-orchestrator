@@ -57,12 +57,11 @@ Execution per step   → Haiku, one step block (~500 tokens input)
 
 ### Escalation ladder
 
-Execution starts with Worker (Haiku), the cheapest model. Most steps are mechanical
-edits that succeed at this tier. When a Worker fails, you choose: retry with Fixer
-(Sonnet, handles shifted line numbers), retry with Specialist (Opus, applies
-judgment), have the Architect rewrite the step, or skip it. The orchestrator never
-auto-escalates. You decide whether a failure is worth retrying with a more
-expensive model.
+Execution starts with Worker (Haiku), the cheapest model. Most steps are mechanical edits that succeed at this tier.
+
+When a Worker fails, you choose: retry with Fixer (Sonnet, handles shifted line numbers), retry with Specialist (Opus, applies judgment), have the Architect rewrite the step, or skip it.
+
+The orchestrator never auto-escalates. You decide whether a failure is worth retrying with a more expensive model.
 
 ## Quick start
 
