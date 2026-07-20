@@ -56,8 +56,8 @@ Then ask:
 >
 > **Example:**
 > ```
-> ground-audits = apps/ground-audits-admin
-> turnaround = apps/turnaround-inspection
+> example-app = apps/example-app
+> example-app-2 = apps/example-app-2
 > ```
 
 Validate that each path exists within the frontend repo using Bash.

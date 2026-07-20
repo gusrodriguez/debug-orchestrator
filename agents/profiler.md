@@ -16,7 +16,7 @@ file.
 You receive:
 
 - **Frontend repo path** — absolute path to the frontend repository
-- **Apps** — a map of aliases to app paths (e.g., `ground-audits = apps/ground-audits-admin`)
+- **Apps** — a map of aliases to app paths (e.g., `example-app = apps/example-app`)
 
 ## Process
 

@@ -56,8 +56,8 @@ within the frontend repo:
 
 ```json
 {
-  "ground-audits": "apps/ground-audits-admin",
-  "turnaround": "apps/turnaround-inspection"
+  "example-app": "apps/example-app",
+  "example-app-2": "apps/example-app-2"
 }
 ```
 
@@ -102,7 +102,7 @@ useful, say so explicitly in the brief — do not skip it.
 Only after Phase 1A completes, spawn **Scout** (sub-agent) with:
 - Bug description (verbatim from user)
 - **Absolute** app path: `<frontend.repoPath>/<app-path>` (e.g.,
-  `/Users/.../adg-octopus/apps/ground-audits-admin`)
+  `/Users/.../my-frontend/apps/example-app`)
 - Instruction: check for `CLAUDE.md` at `<frontend.repoPath>/CLAUDE.md` first
 
 Use model `sonnet`. Wait for Scout to return its brief.

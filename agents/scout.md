@@ -16,7 +16,7 @@ parameters sent, and how the response is rendered.
 You receive:
 
 - **Bug description** — what the user reported
-- **App path** — which app to analyze (e.g., `apps/ground-audits-admin`)
+- **App path** — which app to analyze (e.g., `apps/example-app`)
 
 ## Where to look
 
